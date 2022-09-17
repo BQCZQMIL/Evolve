@@ -28,7 +28,6 @@ export var global = {
     }
 };
 export var tmp_vars = {};
-export var vues = {};
 export var breakdown = {
     c: {},
     p: {}
@@ -51,6 +50,8 @@ export function set_alevel(a_level){
 export function set_ulevel(u_level){
     universe_level = u_level;
 }
+export var hell_reports = {};
+export var hell_graphs = {};
 export var message_logs = {
     view: 'all'
 };
@@ -660,7 +661,6 @@ if (convertVersion(global['version']) < 100023){
             global.resource.Lumber.containers = 0;
             global.resource.Lumber.trade = 0;
             global.resource.Plywood.display = false;
-            global.city['lumber'] = 0;
             if (global.city['sawmill']){ delete global.city['sawmill']; }
             if (global.city['graveyard']){ delete global.city['graveyard']; }
             if (global.city['lumber_yard']){ delete global.city['lumber_yard']; }
@@ -676,7 +676,6 @@ if (convertVersion(global['version']) < 100023){
                 global.civic.craftsman.workers -= global.city.foundry['Plywood'];
                 global.city.foundry.crafting -= global.city.foundry['Plywood'];
                 global.city.foundry['Plywood'] = 0;
-                global['loadFoundry'] = true;
             }
             if (global.city['s_alter']) { global.city.s_alter.harvest = 0; }
             if (global.interstellar['mass_ejector']){
@@ -989,7 +988,85 @@ if (convertVersion(global['version']) < 102015){
     }
 }
 
-global['version'] = '1.2.16';
+if (convertVersion(global['version']) < 102017){
+    if (global.portal.hasOwnProperty('fortress')){
+        global.portal.observe = {
+            settings: {
+                expanded: false,
+                average: false,
+                hyperSlow: false,
+                display: 'game_days',
+                dropKills: true,
+                dropGems: true
+            },
+            stats: {
+                total: {
+                    start: { year: global.city.calendar.year, day: global.city.calendar.day },
+                    days: 0,
+                    wounded: 0, died: 0, revived: 0, surveyors: 0, sieges: 0,
+                    kills: {
+                        drones: 0,
+                        patrols: 0,
+                        sieges: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        turrets: 0
+                    },
+                    gems: {
+                        patrols: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        crafted: 0,
+                        turrets: 0
+                    },
+                },
+                period: {
+                    start: { year: global.city.calendar.year, day: global.city.calendar.day },
+                    days: 0,
+                    wounded: 0, died: 0, revived: 0, surveyors: 0, sieges: 0,
+                    kills: {
+                        drones: 0,
+                        patrols: 0,
+                        sieges: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        turrets: 0
+                    },
+                    gems: {
+                        patrols: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        crafted: 0,
+                        turrets: 0
+                    },
+                }
+            },
+            graphID: 0,
+            graphs: {}
+        };
+    }
+    if (global.tech.hasOwnProperty('genetics') && global.tech.genetics > 1 && global.hasOwnProperty('arpa')){
+        if (!global.arpa.hasOwnProperty('sequence')){
+            global.arpa['sequence'] = {
+                max: 50000,
+                progress: 0,
+                time: 50000,
+                on: false
+            };
+        }
+        if (!global.arpa.sequence['boost']){
+            global.arpa.sequence['boost'] = false;
+        }
+        if (!global.arpa.sequence['auto']){
+            global.arpa.sequence['auto'] = false;
+        }
+        if (!global.arpa.sequence['labs']){
+            global.arpa.sequence['labs'] = 0;
+        }
+    }
+}
+
+global['version'] = '1.2.20';
 delete global['revision'];
 delete global['beta'];
 
@@ -1330,6 +1407,9 @@ if (!global.settings['statsTabs']){
 if (!global.settings['govTabs2']){
     global.settings['govTabs2'] = 0;
 }
+if (!global.settings['hellTabs']){
+    global.settings['hellTabs'] = 0;
+}
 if (!global.settings['locale']){
     global.settings['locale'] = 'en-us';
 }
@@ -1610,6 +1690,10 @@ if (global.city.hasOwnProperty('smelter') && !global.city.smelter.hasOwnProperty
     global.city.smelter['cap'] = 0;
 }
 
+if (!global.civic['homeless']){
+    global.civic.homeless = 0;
+}
+
 if (!global.civic['foreign']){
     global.civic['foreign'] = {
         gov0: {
@@ -1751,6 +1835,9 @@ if (!global.city.morale['tax']){
 }
 if (!global.city.morale['shrine']){
     global.city.morale['shrine'] = 0;
+}
+if (!global.city.morale['blood_thirst']){
+    global.city.morale['blood_thirst'] = 0;
 }
 if (!global.city.morale['broadcast']){
     global.city.morale['broadcast'] = 0;
@@ -2107,7 +2194,7 @@ window.soft_reset = function reset(){
         probes: global.race.probes,
         seed: global.race.seed,
         ascended: global.race.hasOwnProperty('ascended') ? global.race.ascended : false,
-        rejuvenated: global.race.hasOwnProperty('rejuvenated') ? global.race.ascended : false,
+        rejuvenated: global.race.hasOwnProperty('rejuvenated') ? global.race.rejuvenated : false,
     }
     if (gecks > 0){
         replace['geck'] = gecks;
@@ -2329,6 +2416,7 @@ export function clearStates(){
     global.settings.civTabs = 0;
     global.settings.govTabs = 0;
     global.settings.govTabs2 = 0;
+    global.settings.hellTabs = 0;
     global.settings.resTabs = 0;
     global.settings.spaceTabs = 0;
     global.settings.marketTabs = 0

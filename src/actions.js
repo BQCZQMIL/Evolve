@@ -1,6 +1,6 @@
 import { global, save, webWorker, keyMultiplier, keyMap, srSpeak, sizeApproximation, p_on, support_on, gal_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { timeCheck, timeFormat, vBind, popover, clearPopper, flib, tagEvent, clearElement, costMultiplier, darkEffect, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, buildQueue, format_emblem, shrineBonusActive, calc_mastery, calcPillar, calcGenomeScore, getShrineBonus, eventActive, easterEgg, getHalloween, trickOrTreat, deepClone } from './functions.js';
+import { timeCheck, timeFormat, vBind, popover, clearPopper, flib, tagEvent, clearElement, costMultiplier, darkEffect, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, buildQueue, format_emblem, shrineBonusActive, calc_mastery, calcPillar, calcGenomeScore, getShrineBonus, eventActive, easterEgg, getHalloween, trickOrTreat, deepClone, hoovedRename } from './functions.js';
 import { unlockAchieve, challengeIcon, alevel, universeAffix } from './achieve.js';
 import { races, traits, genus_traits, neg_roll_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits, setJType, altRace, setTraitRank, setImitation, shapeShift } from './races.js';
 import { defineResources, galacticTrade, spatialReasoning, resource_values } from './resources.js';
@@ -2207,7 +2207,7 @@ export const actions = {
                 Stone(offset){ return ((offset || 0) + (global.city.hasOwnProperty('s_alter') ? global.city['s_alter'].count : 0)) >= 1 ? 0 : 100; }
             },
             effect(){
-                let sacrifices = global.civic[global.civic.d_job].workers;
+                let sacrifices = global.civic[global.civic.d_job] ? global.civic[global.civic.d_job].workers : 0;
                 let desc = `<div class="has-text-caution">${loc('city_s_alter_sacrifice',[sacrifices])}</div>`;
                 if (global.city.hasOwnProperty('s_alter') && global.city.s_alter.rage > 0){
                     desc = desc + `<div>${loc('city_s_alter_rage',[traits.cannibalize.vars()[0],timeFormat(global.city.s_alter.rage)])}</div>`;
@@ -2288,6 +2288,9 @@ export const actions = {
                 return basicHousingLabel();
             },
             desc: loc('city_basic_housing_desc'),
+            desc(){
+                return $(this)[0].citizens() === 1 ? loc('city_basic_housing_desc') : loc('city_basic_housing_desc_plural',[$(this)[0].citizens()]);
+            },
             category: 'residential',
             reqs: { housing: 1 },
             not_trait: ['cataclysm'],
@@ -2333,7 +2336,9 @@ export const actions = {
             title(){
                 return housingLabel('medium');
             },
-            desc: loc('city_cottage_desc'),
+            desc(){
+                return loc('city_cottage_desc',[$(this)[0].citizens()]);
+            },
             category: 'residential',
             reqs: { housing: 2 },
             not_trait: ['cataclysm'],
@@ -2377,7 +2382,7 @@ export const actions = {
                 return housingLabel('large');
             },
             desc(){
-                return `<div>${loc('city_apartment_desc',[govActive('extravagant',0) ? 6 : 5])}</div><div class="has-text-special">${loc('requires_power')}</div>`
+                return `<div>${loc('city_apartment_desc',[$(this)[0].citizens()])}</div><div class="has-text-special">${loc('requires_power')}</div>`
             },
             category: 'residential',
             reqs: { housing: 3 },
@@ -4280,7 +4285,7 @@ export const actions = {
                 }
                 gain = +(gain).toFixed(0);
 
-                let desc = `<div>${loc('city_wardenclyffe_effect1',[jobScale(1),global.civic.scientist.name])}</div><div>${loc('city_max_knowledge',[gain.toLocaleString()])}</div>`;
+                let desc = `<div>${loc('city_wardenclyffe_effect1',[jobScale(1),global.civic.scientist ? global.civic.scientist.name : loc('job_scientist')])}</div><div>${loc('city_max_knowledge',[gain.toLocaleString()])}</div>`;
                 if (global.city.powered){
                     let pgain = global.tech['science'] >= 7 ? 2500 : 2000;
                     if (global.city.ptrait.includes('magnetic')){
@@ -4618,14 +4623,14 @@ export const actions = {
             queue_size: 10,
             queue_complete(){ return 100 - global.starDock.seeder.count; },
             cost: {
-                Money(offset,wiki){ return wiki || (global.starDock['seeder'] && global.starDock.seeder.count < 100) ? 100000 : 0; },
-                Steel(offset,wiki){ return wiki || (global.starDock['seeder'] && global.starDock.seeder.count < 100) ? 25000 : 0; },
-                Neutronium(offset,wiki){ return wiki || (global.starDock['seeder'] && global.starDock.seeder.count < 100) ? 240 : 0; },
-                Elerium(offset,wiki){ return wiki || (global.starDock['seeder'] && global.starDock.seeder.count < 100) ? 10 : 0; },
-                Nano_Tube(offset,wiki){ return wiki || (global.starDock['seeder'] && global.starDock.seeder.count < 100) ? 12000 : 0; },
+                Money(offset){ return ((offset || 0) + (global.starDock.hasOwnProperty('seeder') ? global.starDock.seeder.count : 0)) < 100 ? 100000 : 0; },
+                Steel(offset){ return ((offset || 0) + (global.starDock.hasOwnProperty('seeder') ? global.starDock.seeder.count : 0)) < 100 ? 25000 : 0; },
+                Neutronium(offset){ return ((offset || 0) + (global.starDock.hasOwnProperty('seeder') ? global.starDock.seeder.count : 0)) < 100 ? 240 : 0; },
+                Elerium(offset){ return ((offset || 0) + (global.starDock.hasOwnProperty('seeder') ? global.starDock.seeder.count : 0)) < 100 ? 10 : 0; },
+                Nano_Tube(offset){ return ((offset || 0) + (global.starDock.hasOwnProperty('seeder') ? global.starDock.seeder.count : 0)) < 100 ? 12000 : 0; },
             },
-            effect(){
-                let count = global.starDock['seeder'] ? global.starDock.seeder.count : 0;
+            effect(wiki){
+                let count = (wiki || 0) + (global.starDock['seeder'] ? global.starDock.seeder.count : 0);
                 let remain = count < 100 ? loc('star_dock_seeder_status1',[100 - count]) : loc('star_dock_seeder_status2');
                 return `<div>${global.race['cataclysm'] ? loc('star_dock_exodus_effect') : loc('star_dock_seeder_effect')}</div><div class="has-text-special">${remain}</div>`;
             },
@@ -4955,8 +4960,8 @@ export function buildTemplate(key, region){
             let id = region === 'space' ? 'space-horseshoe' : 'city-horseshoe';
             let action = {
                 id: id,
-                title(){ return loc(global.race['sludge'] ? 'city_beaker' : 'city_horseshoe'); },
-                desc(){ return loc(global.race['sludge'] ? 'city_beaker_desc' : 'city_horseshoe_desc'); },
+                title(){ return loc(`city_${hoovedRename(true)}`,[hoovedRename(false)]); },
+                desc(){ return loc(`city_${hoovedRename(true)}_desc`,[hoovedRename(false)]); },
                 category: 'outskirts',
                 reqs: { primitive: 3 },
                 trait: ['hooved'],
@@ -4966,30 +4971,30 @@ export function buildTemplate(key, region){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
                         let active = !global.race['kindling_kindred'] && !global.race['smoldering']
                             && (!global.resource.Copper.display || shoes <= 12) ? true : false;
-                        return active ? (shoes > 12 ? 25 : 5) * (shoes <= 5 ? 1 : shoes - 4) : 0;
+                        return active ? Math.round((shoes > 12 ? 25 : 5) * (shoes <= 5 ? 1 : shoes - 4) * (traits.hooved.vars()[0] / 100)) : 0;
                     },
                     Copper(offset){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
                         let lum = (global.race['kindling_kindred'] || global.race['smoldering']) ? false : true;
                         let active = (!lum || (lum && shoes > 12 && global.resource.Copper.display))
                             && (!global.resource.Iron.display || shoes <= 75) ? true : false;
-                        return active ? (shoes > 75 ? 20 : 5) * (shoes <= 12 ? 1 : shoes - 11) : 0;
+                        return active ? Math.round((shoes > 75 ? 20 : 5) * (shoes <= 12 ? 1 : shoes - 11) * (traits.hooved.vars()[0] / 100)) : 0;
                     },
                     Iron(offset){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
-                        return global.resource.Iron.display && shoes > 75 && (!global.resource.Steel.display || shoes <= 150) ? (shoes <= 150 ? 12 : 28) * shoes : 0;
+                        return global.resource.Iron.display && shoes > 75 && (!global.resource.Steel.display || shoes <= 150) ? Math.round((shoes <= 150 ? 12 : 28) * shoes * (traits.hooved.vars()[0] / 100)) : 0;
                     },
                     Steel(offset){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
-                        return global.resource.Steel.display && shoes > 150 && (!global.resource.Adamantite.display || shoes <= 500) ? (shoes <= 500 ? 40 : 100) * shoes : 0;
+                        return global.resource.Steel.display && shoes > 150 && (!global.resource.Adamantite.display || shoes <= 500) ? Math.round((shoes <= 500 ? 40 : 100) * shoes * (traits.hooved.vars()[0] / 100)) : 0;
                     },
                     Adamantite(offset){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
-                        return global.resource.Adamantite.display && shoes > 500 && (!global.resource.Orichalcum.display || shoes <= 5000) ? (shoes <= 5000 ? 5 : 25) * shoes : 0;
+                        return global.resource.Adamantite.display && shoes > 500 && (!global.resource.Orichalcum.display || shoes <= 5000) ? Math.round((shoes <= 5000 ? 5 : 25) * shoes * (traits.hooved.vars()[0] / 100)) : 0;
                     },
                     Orichalcum(offset){
                         let shoes = (global.race['shoecnt'] || 0) + (offset || 0);
-                        return global.resource.Orichalcum.display && shoes > 5000 ? 25 * shoes - 120000 : 0;
+                        return global.resource.Orichalcum.display && shoes > 5000 ? Math.round((25 * shoes - 120000) * (traits.hooved.vars()[0] / 100)) : 0;
                     }
                 },
                 action(){
@@ -5766,7 +5771,8 @@ export function setAction(c_action,action,type,old){
             });
         }
         let clss = c_action['class'] ? ` ${c_action['class']}` : ``;
-        element = $(`<a class="button is-dark${cst}${clss}"${data} v-on:click="action"><span class="aTitle" v-html="$options.filters.title(title)">}</span></a><a v-on:click="describe" class="is-sr-only">{{ title }} description</a>`);
+        let active = c_action['highlight'] ? (c_action.highlight() ? `<span class="is-sr-only">${loc('active')}</span>` : `<span class="is-sr-only">${loc('not_active')}</span>`) : '';
+        element = $(`<a class="button is-dark${cst}${clss}"${data} v-on:click="action"><span class="aTitle" v-html="$options.filters.title(title)">}</span>${active}</a><a v-on:click="describe" class="is-sr-only">{{ title }} description</a>`);
     }
     parent.append(element);
 
@@ -7204,7 +7210,9 @@ export function orbitDecayed(){
             });
         }
         Object.keys(global.resource).forEach(function (res){
-            global.resource[res].trade = 0;
+            if (global.resource[res].hasOwnProperty('trade')){
+                global.resource[res].trade = 0;
+            }
         });
 
         global.space['red_university'] = { count: 0 };
@@ -7245,7 +7253,14 @@ export function orbitDecayed(){
             global.civic.d_job = 'unemployed';
         }
 
-        global.race.purgatory.city = {};
+        for (let building of Object.values(global.race.purgatory.city)){
+            if (building.hasOwnProperty('count')){
+                building.count = 0;
+            }
+            if (building.hasOwnProperty('on')){
+                building.on = 0;
+            }
+        }
         if (global.queue.hasOwnProperty('queue')){
             for (let i = global.queue.queue.length-1; i >= 0; i--){
                 let item = global.queue.queue[i];

@@ -3,6 +3,89 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.20`,
+        date: `9/16/2022`,
+        changes: [
+            `New homelessness system.`,
+            `Factory, Mining Droids, and Graphene Plants will remember resource assignment after a low power shutdown.`,
+            `Terraforming and Ascension can no longer be queued or multi-clicked.`,
+            `AI Cores show correct bonus in tooltip.`,
+            `Stealing Rocketry will now unlock rival in Truepath.`,
+            `Playful will no longer remove unemployed stress with no hunters.`,
+            `Andromeda Citizens will no longer stick around if abandoned by a stargate shutdown.`,
+            `Fixed various bugs with mutating in or out some traits.`,
+            `Made some improvements for screen readers to determine active state of challenges.`
+        ]
+    },
+    {
+        version: `1.2.19`,
+        revision: `a`,
+        date: `8/21/2022`,
+        changes: [
+            `Home Planet Orbital structures are now merged with the Moon instead of Red Planet in Catacylsm.`,
+        ]
+    },
+    {
+        version: `1.2.19`,
+        date: `8/20/2022`,
+        changes: [
+            `Added rank scaling effects to traits: Carnivore, Hooved, Leathery, Unified, & Magnificent.`,
+            `Structures orbiting the home planet are now moved to the Red planet after Orbit Decay or during Cataclysm.`,
+            `Fixed a bug with deactivating fuel consuming structures when fuel runs dry.`,
+            `Already active Governor tasks will no longer display for assignment in other task slots.`,
+            `Constructing a Stellar or Infernal Forge will now assign Iron as a default resource instead of nothing.`,
+            `Buffed effects of Star Forge fueled smelting.`,
+            `Fixed an incorrect source label for money storage in Orbit Decay.`,
+        ]
+    },
+    {
+        version: `1.2.18`,
+        revision: `a`,
+        date: `8/14/2022`,
+        changes: [
+            `Fixed ARPA queueing.`,
+        ]
+    },
+    {
+        version: `1.2.18`,
+        date: `8/14/2022`,
+        changes: [
+            `More accurate timers when using Governor Trash Management task.`,
+            `Optimistic Min Morale effect now scales with trait rank.`,
+            `Fixed TP loot table when Assaulting or Sieging rival.`,
+        ]
+    },
+    {
+        version: `1.2.17`,
+        revision: `a`,
+        date: `8/10/2022`,
+        changes: [
+            `Cheese Event power is now scaled with your cheese level.`,
+            `Fixed Soft Reset bug with Rejuvenated.`,
+        ]
+    },
+    {
+        version: `1.2.17`,
+        date: `8/10/2022`,
+        changes: [
+            `New Hell stats tracking and analytics.`,
+            `Fixed Genetics not unlocking in Cataclysm.`,
+            `Fixed many High Pop scaling interactions.`,
+            `Fixed some loading bugs with wiki when no save data is present.`,
+            `Updated various wiki entries and calculators.`,
+            `Updated Pig Latin.`
+        ]
+    },
+    {
+        version: `1.2.16`,
+        revision: `a`,
+        date: `8/8/2022`,
+        changes: [
+            `Fixed OD bugs with Ziggurat, Garage, and Fabrication.`,
+            `Fixed Launch Facility sometimes getting stuck in queue.`
+        ]
+    },
+    {
         version: `1.2.16`,
         date: `8/4/2022`,
         changes: [

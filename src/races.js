@@ -1,7 +1,7 @@
 import { global, save, webWorker, power_generated } from './vars.js';
 import { loc } from './locale.js';
 import { defineIndustry } from './civics.js';
-import { setJobName } from './jobs.js'; 
+import { setJobName, jobScale, loadFoundry } from './jobs.js';
 import { vBind, clearElement, removeFromQueue, removeFromRQueue, calc_mastery, getEaster, getHalloween } from './functions.js';
 import { setResourceName } from './resources.js';
 import { highPopAdjust } from './prod.js';
@@ -207,6 +207,21 @@ export const traits = {
         desc: loc('trait_carnivore'),
         type: 'genus',
         val: 3,
+        vars(r){ 
+            // [Rot Percent]
+            switch (r || global.race.carnivore || 1){
+                case 0.25:
+                    return [65];
+                case 0.5:
+                    return [60];
+                case 1:
+                    return [50];
+                case 2:
+                    return [40];
+                case 3:
+                    return [35];
+            }
+        },
     },
     beast: { // Improved hunting and soldier training
         name: loc('trait_beast_name'),
@@ -1192,7 +1207,22 @@ export const traits = {
         name: loc('trait_hooved_name'),
         desc: loc('trait_hooved'),
         type: 'major',
-        val: -4
+        val: -4,
+        vars(r){
+            // [Cost Adjustment]
+            switch (r || global.race.hooved || 1){
+                case 0.25:
+                    return [130];
+                case 0.5:
+                    return [120];
+                case 1:
+                    return [100];
+                case 2:
+                    return [80];
+                case 3:
+                    return [70];
+            }
+        },
     },
     rage: { // Wounded soldiers rage with extra power
         name: loc('trait_rage_name'),
@@ -1569,15 +1599,15 @@ export const traits = {
         vars(r){
             switch (r || global.race.optimistic || 1){
                 case 0.25:
-                    return [4];
+                    return [4,6];
                 case 0.5:
-                    return [5];
+                    return [5,8];
                 case 1:
-                    return [10];
+                    return [10,10];
                 case 2:
-                    return [15];
+                    return [15,13];
                 case 3:
-                    return [18];
+                    return [18,15];
             }
         },
     },
@@ -1688,6 +1718,21 @@ export const traits = {
         desc: loc('trait_leathery'),
         type: 'major',
         val: 2,
+        vars(r){
+            // Morale loss (Base value is 5)
+            switch (r || global.race.leathery || 1){
+                case 0.25:
+                    return [4];
+                case 0.5:
+                    return [3];
+                case 1:
+                    return [2];
+                case 2:
+                    return [1];
+                case 3:
+                    return [0];
+            }
+        },
     },
     pessimistic: { // Minor increase to stress
         name: loc('trait_pessimistic_name'),
@@ -2670,6 +2715,21 @@ export const traits = {
         desc: loc('trait_unified'),
         type: 'major',
         val: 4,
+        vars(r){
+            // [Bonus to unification]
+            switch (r || global.race.unified || 1){
+                case 0.25:
+                    return [0];
+                case 0.5:
+                    return [1];
+                case 1:
+                    return [3];
+                case 2:
+                    return [5];
+                case 3:
+                    return [7];
+            }
+        }
     },
     rainbow: { // Gain a bonus if sunny after raining
         name: loc('trait_rainbow_name'),
@@ -2696,6 +2756,21 @@ export const traits = {
         desc: loc('trait_magnificent'),
         type: 'major',
         val: 6,
+        vars(r){
+            // [Knowledge Base, Knowledge Scale, Tax Bonus]
+            switch (r || global.race.magnificent || 1){
+                case 0.25:
+                    return [300, 1, 0.5, 0.75, 1];
+                case 0.5:
+                    return [350, 2, 0.75, 0.8, 1];
+                case 1:
+                    return [400, 3, 1, 1, 1];
+                case 2:
+                    return [450, 3, 1.5, 1.5, 1.5];
+                case 3:
+                    return [500, 3, 2, 2, 2];
+            }
+        }
     },
     noble: { // Unable to raise taxes above base value or set very low taxes
         name: loc('trait_noble_name'),
@@ -4293,14 +4368,8 @@ function getPurgatory(s,t){
 }
 
 function purgeLumber(){
-    global.resource.Lumber.display = false;
-    global.resource.Crates.amount += global.resource.Lumber.crates;
-    global.resource.Lumber.crates = 0;
-    global.resource.Containers.amount += global.resource.Lumber.containers;
-    global.resource.Lumber.containers = 0;
-    global.resource.Lumber.trade = 0;
-    global.resource.Plywood.display = false;
-    global.city['lumber'] = 0;
+    releaseResource('Lumber');
+    releaseResource('Plywood');
     removeFromQueue(['city-graveyard', 'city-lumber_yard', 'city-sawmill']);
     removeFromRQueue(['reclaimer', 'axe', 'saw']);
     setPurgatory('city','sawmill');
@@ -4319,22 +4388,42 @@ function purgeLumber(){
         global.race.casting.lumberjack = 0;
         defineIndustry();
     }
-    if (global.tech['foundry']){
-        global.civic.craftsman.workers -= global.city.foundry['Plywood'];
-        global.city.foundry.crafting -= global.city.foundry['Plywood'];
-        global.city.foundry['Plywood'] = 0;
-        global['loadFoundry'] = true;
-    }
     if (global.city['s_alter']) {
         global.city.s_alter.harvest = 0;
     }
-    if (global.interstellar['mass_ejector']){
-        global.interstellar.mass_ejector.total -= global.interstellar.mass_ejector.Lumber;
-        global.interstellar.mass_ejector.Lumber = 0;
+}
+
+function releaseResource(res) {
+    global.resource[res].display = false;
+    if (global.race['alchemy'] && global.race.alchemy.hasOwnProperty(res)){
+        global.resource.Mana.diff += global.race.alchemy[res];
+        global.race.alchemy[res] = 0;
     }
-    if (global.city['nanite_factory']){
-        global.city.nanite_factory.Lumber = 0;
+    if (global.interstellar['mass_ejector'] && global.interstellar.mass_ejector.hasOwnProperty(res)){
+        global.interstellar.mass_ejector.total -= global.interstellar.mass_ejector[res];
+        global.interstellar.mass_ejector[res] = 0;
     }
+    if (global.city['nanite_factory'] && global.city.nanite_factory.hasOwnProperty(res)){
+        global.city.nanite_factory[res] = 0;
+    }
+    if (global.portal['transport'] && global.portal.transport.cargo.hasOwnProperty(res)){
+        global.portal.transport.cargo.used -= global.portal.transport.cargo[res];
+        global.portal.transport.cargo[res] = 0;
+    }
+    if (global.tech['foundry'] && global.city.foundry.hasOwnProperty(res)){
+        global.civic.craftsman.workers -= global.city.foundry[res];
+        global.city.foundry.crafting -= global.city.foundry[res];
+        global.city.foundry[res] = 0;
+        loadFoundry();
+    }
+    if (global.resource[res].hasOwnProperty('trade')) {
+        global.city.market.trade -= Math.abs(global.resource[res].trade);
+        global.resource[res].trade = 0;
+    }
+    global.resource.Crates.amount += global.resource[res].crates;
+    global.resource[res].crates = 0;
+    global.resource.Containers.amount += global.resource[res].containers;
+    global.resource[res].containers = 0;
 }
 
 function adjustFood() {
@@ -4546,7 +4635,9 @@ export function cleanAddTrait(trait){
             break;
         case 'terrifying':
             Object.keys(global.resource).forEach(function (res){
-                global.resource[res].trade = 0;
+                if (global.resource[res].hasOwnProperty('trade')){
+                    global.resource[res].trade = 0;
+                }
             });
             global.settings.showMarket = false;
             if (global.settings.marketTabs === 0) {
@@ -4599,7 +4690,7 @@ export function cleanAddTrait(trait){
             buildGarrison($('#c_garrison'),false);
             for (let i=0; i<3; i++){
                 if (global.civic.foreign[`gov${i}`].occ){
-                    let occ_amount = global.civic.govern.type === 'federation' ? 15 : 20;
+                    let occ_amount = jobScale(global.civic.govern.type === 'federation' ? 15 : 20);
                     global.civic['garrison'].max += occ_amount;
                     global.civic['garrison'].workers += occ_amount;
                     global.civic.foreign[`gov${i}`].occ = false;
@@ -4722,7 +4813,7 @@ export function cleanRemoveTrait(trait,rank){
             }
             break;
         case 'smoldering':
-            global.resource.Chrysotile.display = false;
+            releaseResource('Chrysotile')
             if (global.race['kindling_kindred']){
                 break;
             }
@@ -4897,10 +4988,12 @@ export function setImitation(mod){
         for (let trait of i_traits) {
             if (!['evil','imitation'].includes(trait)){
                 let set = global.race[trait] ? false : true;
-                let added = global.race.iTraits[trait] ? false : true;
+                if (!global.race.iTraits.hasOwnProperty(trait)) {
+                    global.race.iTraits[trait] = global.race[trait] || 0;
+                }
+                let forced = global.race.iTraits[trait] ? false : true;
                 let rank = traits[trait].val < 0 ? traits.imitation.vars()[1] : traits.imitation.vars()[0];
-                global.race.iTraits[trait] = global.race.iTraits[trait] || global.race[trait] || 0;
-                setTraitRank(trait,{ set: rank, force: added });
+                setTraitRank(trait,{ set: rank, force: forced });
                 if (mod && set){ cleanAddTrait(trait); }
             }
         }
@@ -5007,7 +5100,7 @@ export function traitSkin(type,trait){
         case 'name':
         {
             let name = {
-                hooved: global.race['sludge'] ? loc('trait_hooved_slime_name') : traits['hooved'].name,
+                hooved: hoovedReskin(false),
                 promiscuous: global.race['artifical'] ? loc('trait_promiscuous_synth_name') : traits['promiscuous'].name,
             };
             return trait ? (name[trait] ? name[trait] : traits[trait].name) : name;
@@ -5015,11 +5108,26 @@ export function traitSkin(type,trait){
         case 'desc':
         {
             let desc = {
-                hooved: global.race['sludge'] ? loc('trait_hooved_slime') : traits['hooved'].desc,
+                hooved: hoovedReskin(true),
                 promiscuous: global.race['artifical'] ? loc('trait_promiscuous_synth') : traits['promiscuous'].desc,
             };
             return trait ? (desc[trait] ? desc[trait] : traits[trait].desc) : desc;
         }
+    }
+}
+
+function hoovedReskin(desc){
+    if (global.race['sludge']){
+        return desc ? loc('trait_hooved_slime') : loc('trait_hooved_slime_name');
+    }
+    else if (global.race.species === 'cath'){
+        return desc ? loc('trait_hooved_cath') : loc('trait_hooved_cath_name');
+    }
+    else if (races[global.race.species].type === 'plant'){
+        return desc ? loc('trait_hooved_plant') : loc('trait_hooved_plant_name');
+    }
+    else {
+        return desc ? traits['hooved'].desc : traits['hooved'].name;
     }
 }
 

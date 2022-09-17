@@ -1,5 +1,5 @@
 import { global, tmp_vars, keyMultiplier, breakdown, sizeApproximation, p_on, support_on } from './vars.js';
-import { vBind, clearElement, modRes, flib, calc_mastery, calcPillar, eventActive, easterEgg, trickOrTreat, popover, harmonyEffect, darkEffect } from './functions.js';
+import { vBind, clearElement, modRes, flib, calc_mastery, calcPillar, eventActive, easterEgg, trickOrTreat, popover, harmonyEffect, darkEffect, hoovedRename } from './functions.js';
 import { traits } from './races.js';
 import { hellSupression } from './portal.js';
 import { syndicate } from './truepath.js';
@@ -264,8 +264,8 @@ export const craftingRatio = (function(){
                     if (global.city.foundry[resource] && global.city.foundry[resource] > 1){
                         crafting[resource].add.push({
                             name: loc(`tech_apprentices`),
-                            manual: (global.city.foundry[resource] - 1) * 0.03,
-                            auto: (global.city.foundry[resource] - 1) * 0.03
+                            manual: (global.city.foundry[resource] - 1) * highPopAdjust(0.03),
+                            auto: (global.city.foundry[resource] - 1) * highPopAdjust(0.03)
                         });
                     }
                 });
@@ -934,10 +934,8 @@ export function setResourceName(name){
         }
     }
 
-    if (global.race['sludge']){
-        if (name === 'Horseshoe'){
-            global.resource[name].name = loc(`resource_Beaker_name`);
-        }
+    if (name === 'Horseshoe'){
+        global.resource[name].name = hoovedRename();
     }
 
     if (global.race['artifical']){
@@ -1119,7 +1117,7 @@ function loadSpecialResource(name,color) {
                 break;
 
             case 'AICore':
-                let bonus = +(1 - (0.99 ** global.race.AICore.count)).toFixed(2) * 100;
+                let bonus = +((1 - (0.99 ** global.race.AICore.count)) * 100).toFixed(2);
                 desc.append($(`<span>${loc(`resource_${name}_desc`,[bonus])}</span>`));
                 break;
         }
@@ -1763,8 +1761,8 @@ export function craftingPopover(id,res,type,extra){
                 let val = parseFloat(raw.slice(0,-1));
                 if (val != 0 && !isNaN(val)){
                     let type = val > 0 ? 'success' : 'danger';
-                    let label = mod.replace("_"," ");
-                    label = mod.replace(/\+.+$/,"");
+                    let label = mod.replace(/\+.+$/,"");
+                    mod = mod.replace(/'/g, "\\'");
                     col1.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ ${[res]}['${mod}'] | translate }}</span></div>`);
                 }
             });
@@ -1774,8 +1772,8 @@ export function craftingPopover(id,res,type,extra){
             let val = parseFloat(raw.slice(0,-1));
             if (val != 0 && !isNaN(val)){
                 let type = val > 0 ? 'success' : 'danger';
-                let label = mod.replace("_"," ");
-                label = mod.replace(/\+.+$/,"");
+                let label = mod.replace(/\+.+$/,"");
+                mod = mod.replace(/'/g, "\\'");
                 col1.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ craft.multi_bd['${mod}'] | translate }}</span></div>`);
             }
         });
@@ -1790,8 +1788,8 @@ export function craftingPopover(id,res,type,extra){
             if (val != 0 && !isNaN(val)){
                 count++;
                 let type = val > 0 ? 'success' : 'danger';
-                let label = mod.replace("_"," ");
-                label = mod.replace(/\+.+$/,"");
+                let label = mod.replace(/\+.+$/,"");
+                mod = mod.replace(/'/g, "\\'");
                 col2.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ craft.add_bd['${mod}'] | translate }}</span></div>`);
             }
         });
@@ -1807,8 +1805,8 @@ export function craftingPopover(id,res,type,extra){
                 if (val != 0 && !isNaN(val)){
                     count++;
                     let type = val > 0 ? 'success' : 'danger';
-                    let label = mod.replace("_"," ");
-                    label = mod.replace(/\+.+$/,"");
+                    let label = mod.replace(/\+.+$/,"");
+                    mod = mod.replace(/'/g, "\\'");
                     col3.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ consume.${res}['${mod}'] | fix | translate }}</span></div>`);
                 }
             });
@@ -1913,8 +1911,8 @@ function breakdownPopover(id,name,type){
                         if (val != 0 && !isNaN(val)){
                             prevCol = true;
                             let type = val > 0 ? 'success' : 'danger';
-                            let label = mod.replace("_"," ");
-                            label = mod.replace(/\+.+$/,"");
+                            let label = mod.replace(/\+.+$/,"");
+                            mod = mod.replace(/'/g, "\\'");
                             col1.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ ${t}['${mod}'] | translate }}</span></div>`);
                         }
                     });
@@ -1930,8 +1928,8 @@ function breakdownPopover(id,name,type){
                 if (val != 0 && !isNaN(val)){
                     count++;
                     let type = val > 0 ? 'success' : 'danger';
-                    let label = mod.replace("_"," ");
-                    label = mod.replace(/\+.+$/,"");
+                    let label = mod.replace(/\+.+$/,"");
+                    mod = mod.replace(/'/g, "\\'");
                     col2.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ consume.${name}['${mod}'] | fix | translate }}</span></div>`);
                 }
             });

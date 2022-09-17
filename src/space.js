@@ -74,7 +74,7 @@ const spaceProjects = {
                 let label = global.race['cataclysm'] ? loc('space_moon_observatory_title') : (global.race['orbit_decayed'] ? loc('city_university') : wardenLabel());
                 let amount = global.race['cataclysm'] ? 25 : (global.race['orbit_decayed'] ? 12 : 4);
                 let synergy = `<div>${loc('space_home_satellite_effect2',[label, amount])}</div>`;
-                return `<div>${loc('plus_max_resource',[knowledge,loc('resource_Knowledge_name')])}</div>${synergy}<div>${loc('space_home_satellite_effect3',[global.civic.scientist.name])}</div>`
+                return `<div>${loc('plus_max_resource',[knowledge,loc('resource_Knowledge_name')])}</div>${synergy}<div>${loc('space_home_satellite_effect3',[global.civic.scientist ? global.civic.scientist.name : loc('job_scientist')])}</div>`
             },
             action(){
                 if (payCosts($(this)[0])){
@@ -535,13 +535,13 @@ const spaceProjects = {
                 Cipher(offset){ return ((offset || 0) + (global.space.hasOwnProperty('terraformer') ? global.space.terraformer.count : 0)) < 100 ? (global.race['truepath'] ? 1000 : 0) : 0; },
             },
             effect(wiki){
-                let count = (wiki || 0) + (global.space.hasOwnProperty('terraformer') ? global.space.terraformer.count : 0);
+                let count = (wiki ? wiki.count : 0) + (global.space.hasOwnProperty('terraformer') ? global.space.terraformer.count : 0);
                 if (count < 100){
                     let remain = 100 - count;
                     return `<div>${loc('space_terraformer_effect')}</div><div class="has-text-special">${loc('space_dwarf_collider_effect2',[remain])}</div>`;
                 }
                 else {
-                    return interstellarProjects.int_sirius.ascension_trigger.effect();
+                    return spaceProjects.spc_red.atmo_terraformer.effect(wiki);
                 }
             },
             action(){
@@ -571,8 +571,8 @@ const spaceProjects = {
             },
             queue_complete(){ return 0; },
             cost: {},
-            powered(){
-                return powerCostMod(global.race['truepath'] ? 500 : 5000);
+            powered(wiki){
+                return powerCostMod((wiki ? wiki.truepath : global.race['truepath']) ? 500 : 5000);
             },
             postPower(o){
                 if (o){
@@ -586,9 +586,9 @@ const spaceProjects = {
                     renderSpace();
                 }
             },
-            effect(){
+            effect(wiki){
                 let reward = terraformProjection();
-                let power = $(this)[0].powered();
+                let power = $(this)[0].powered(wiki);
                 let power_label = power > 0 ? `<div class="has-text-caution">${loc('minus_power',[power])}</div>` : '';
                 return `<div>${loc('space_terraformer_effect2')}</div>${reward}${power_label}`;
             },
@@ -601,6 +601,8 @@ const spaceProjects = {
             title: loc('space_terraform'),
             desc: loc('space_terraform'),
             reqs: { terraforming: 3 },
+            queue_complete(){ return 0; },
+            no_multi: true,
             cost: {},
             effect(){
                 let reward = terraformProjection();
@@ -645,10 +647,11 @@ const spaceProjects = {
                     global.civic.colonist.display = true;
                     if (global.space.spaceport.support < global.space.spaceport.s_max){
                         global.space['living_quarters'].on++;
-                        global.resource[global.race.species].max += 1;
+                        global.resource[global.race.species].max += jobScale(1);
                         if (global.civic[global.civic.d_job].workers > 0){
-                            global.civic[global.civic.d_job].workers--;
-                            global.civic.colonist.workers++;
+                            let hired = global.civic[global.civic.d_job].workers - jobScale(1) < 0 ? global.civic[global.civic.d_job].workers : jobScale(1);
+                            global.civic[global.civic.d_job].workers -= hired;
+                            global.civic.colonist.workers += hired;
                         }
                     }
                     return true;
@@ -910,7 +913,7 @@ const spaceProjects = {
             },
             effect(){
                 let c_worker = global.race['cataclysm'] ? `<div>${loc('city_cement_plant_effect1',[jobScale(1)])}</div>` : ``;
-                let fab = global.race['cataclysm'] ? 5 : 2;
+                let fab = global.race['cataclysm'] || global.race['orbit_decayed'] ? 5 : 2;
                 if (global.race['high_pop']){
                     fab = highPopAdjust(fab);
                 }
@@ -1156,9 +1159,6 @@ const spaceProjects = {
                 if (global.tech['ancient_deify'] && global.tech['ancient_deify'] >= 2){
                     bonus += 0.01 * support_on['exotic_lab'];
                 }
-                if (global.race['high_pop']){
-                    bonus = highPopAdjust(bonus);
-                }
                 if (global.civic.govern.type === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
                     let faith = 0.002;
                     if (global.race['high_pop']){
@@ -1168,6 +1168,9 @@ const spaceProjects = {
                 }
                 if (global.race['ooze']){
                     bonus *= 1 - (traits.ooze.vars()[1] / 100);
+                }
+                if (global.race['high_pop']){
+                    bonus = highPopAdjust(bonus);
                 }
                 bonus = +(bonus).toFixed(2);
                 let desc = `<div>${loc('space_red_ziggurat_effect',[bonus])}</div>`;
@@ -3339,6 +3342,7 @@ const interstellarProjects = {
                             global.city.smelter.cap += 2;
                             global.city.smelter.Star += 2;
                             global.city.smelter.StarCap += 2;
+                            global.city.smelter.Iron += 2;
                         }
                     }
                     return true;
@@ -3903,6 +3907,8 @@ const interstellarProjects = {
             title: loc('interstellar_ascend'),
             desc: loc('interstellar_ascend'),
             reqs: { ascension: 8 },
+            queue_complete(){ return 0; },
+            no_multi: true,
             cost: {},
             effect(){
                 let reward = astrialProjection();
@@ -4633,7 +4639,7 @@ const galaxyProjects = {
                 Horseshoe(){ return global.race['hooved'] ? 3 : 0; }
             },
             effect(){
-                return `<div>${loc('plus_max_citizens',[$(this)[0].citizens()])}</div><div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
+                return `<div class="has-text-caution">${loc(`requires_res`,[loc('galaxy_embassy')])}</div><div>${loc('plus_max_citizens',[$(this)[0].citizens()])}</div><div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
             },
             powered(){ return powerCostMod(3); },
             action(){
@@ -4670,7 +4676,7 @@ const galaxyProjects = {
             effect(){
                 let leave = '';
                 if (global.tech.xeno >= 7){
-                    leave = `<div>${loc('galaxy_symposium_effect3',[300])}</div>`;
+                    leave = `<div>${loc('galaxy_symposium_effect3',[+highPopAdjust(300).toFixed(2)])}</div>`;
                 }
                 return `<div>${loc('galaxy_symposium_effect',[1750])}</div><div>${loc('galaxy_symposium_effect2',[650])}</div>${leave}<div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
             },
@@ -5624,68 +5630,89 @@ function space(zone){
         return false;
     }
 
+    let regionOrder = [];
     Object.keys(spaceProjects).forEach(function (region){
+        if (global.race['orbit_decayed'] || global.race['cataclysm']){
+            if (region !== 'spc_home'){
+                regionOrder.push(region);
+                if (global.race['orbit_decayed'] && region === 'spc_red'){
+                    regionOrder.push('spc_home');
+                }
+                else if (global.race['cataclysm'] && region === 'spc_moon'){
+                    regionOrder.push('spc_home');
+                }
+            }
+        }
+        else {
+            regionOrder.push(region);
+        }
+    });
+
+    regionOrder.forEach(function (region){
         let show = region.replace("spc_","");
         if (global.settings.space[`${show}`]){
             if (global.race['truepath'] && spaceProjects[region].info.zone !== zone){
                 return;
             }
             let name = typeof spaceProjects[region].info.name === 'string' ? spaceProjects[region].info.name : spaceProjects[region].info.name();
+            let noHome = global.race['orbit_decayed'] || global.race['cataclysm'] ? true : false;
 
-            if (spaceProjects[region].info['support']){
-                let support = spaceProjects[region].info['support'];
-                if (!global.space[support].hasOwnProperty('support')){
-                    global.space[support]['support'] = 0;
-                    global.space[support]['s_max'] = 0;
-                }
-                parent.append(`<div id="${region}" class="space"><div id="sr${region}"><h3 class="name has-text-warning">${name}</h3> <span v-show="s_max">{{ support }}/{{ s_max }}</span></div></div>`);
-                vBind({
-                    el: `#sr${region}`,
-                    data: global.space[support]
-                });
-            }
-            else {
-                parent.append(`<div id="${region}" class="space"><div><h3 class="name has-text-warning">${name}</h3></div></div>`);
-            }
-
-            if (global.race['truepath'] && spaceProjects[region].info.hasOwnProperty('syndicate') && spaceProjects[region].info.syndicate() && global.tech['syndicate']){
-                $(`#${region}`).append(`<div id="${region}synd" v-show="${region}"></div>`);
-
-                $(`#${region}synd`).append(`<span class="syndThreat has-text-caution">${loc('space_syndicate')} <span class="has-text-danger" v-html="threat('${region}')"></span></span>`);
-                $(`#${region}synd`).append(`<span class="syndThreat has-text-caution">${loc('space_scan_effectiveness')} <span class="has-text-warning" v-html="scan('${region}')"></span></span>`);
-                $(`#${region}synd`).append(`<span v-show="overkill('${region}')" class="syndThreat has-text-caution">${loc('space_overkill')} <span class="has-text-warning" v-html="overkill('${region}')"></span></span>`);
-                vBind({
-                    el: `#${region}synd`,
-                    data: global.space.syndicate,
-                    methods: {
-                        threat(r){
-                            if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
-                                let synd = syndicate(r,true);
-                                if (synd.s >= 10){
-                                    return synd.s >= 50 ? synd.r : Math.round(synd.r * synd.s * 0.02);
-                                }
-                            }
-                            return '???';
-                        },
-                        scan(r){
-                            if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
-                                let synd = syndicate(r,true);
-                                return +((synd.s + 25) / 1.25).toFixed(1) + '%';
-                            }
-                            return loc(`galaxy_piracy_none`);
-                        },
-                        overkill(r){
-                            if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
-                                let synd = syndicate(r,true);
-                                return synd.s >= 100 ? synd.o : 0;
-                            }
-                            return 0;
-                        }
+            if ((noHome && region !== 'spc_home') || !noHome){
+                if (spaceProjects[region].info['support']){
+                    let support = spaceProjects[region].info['support'];
+                    if (!global.space[support].hasOwnProperty('support')){
+                        global.space[support]['support'] = 0;
+                        global.space[support]['s_max'] = 0;
                     }
-                });
+                    parent.append(`<div id="${region}" class="space"><div id="sr${region}"><h3 class="name has-text-warning">${name}</h3> <span v-show="s_max">{{ support }}/{{ s_max }}</span></div></div>`);
+                    vBind({
+                        el: `#sr${region}`,
+                        data: global.space[support]
+                    });
+                }
+                else {
+                    parent.append(`<div id="${region}" class="space"><div><h3 class="name has-text-warning">${name}</h3></div></div>`);
+                }
 
-                if (spaceProjects[region].info.hasOwnProperty('extra')){
-                    spaceProjects[region].info.extra(region);
+                if (global.race['truepath'] && spaceProjects[region].info.hasOwnProperty('syndicate') && spaceProjects[region].info.syndicate() && global.tech['syndicate']){
+                    $(`#${region}`).append(`<div id="${region}synd" v-show="${region}"></div>`);
+
+                    $(`#${region}synd`).append(`<span class="syndThreat has-text-caution">${loc('space_syndicate')} <span class="has-text-danger" v-html="threat('${region}')"></span></span>`);
+                    $(`#${region}synd`).append(`<span class="syndThreat has-text-caution">${loc('space_scan_effectiveness')} <span class="has-text-warning" v-html="scan('${region}')"></span></span>`);
+                    $(`#${region}synd`).append(`<span v-show="overkill('${region}')" class="syndThreat has-text-caution">${loc('space_overkill')} <span class="has-text-warning" v-html="overkill('${region}')"></span></span>`);
+                    vBind({
+                        el: `#${region}synd`,
+                        data: global.space.syndicate,
+                        methods: {
+                            threat(r){
+                                if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
+                                    let synd = syndicate(r,true);
+                                    if (synd.s >= 10){
+                                        return synd.s >= 50 ? synd.r : Math.round(synd.r * synd.s * 0.02);
+                                    }
+                                }
+                                return '???';
+                            },
+                            scan(r){
+                                if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
+                                    let synd = syndicate(r,true);
+                                    return +((synd.s + 25) / 1.25).toFixed(1) + '%';
+                                }
+                                return loc(`galaxy_piracy_none`);
+                            },
+                            overkill(r){
+                                if (global.space.hasOwnProperty('shipyard') && global.space.shipyard.hasOwnProperty('ships')){
+                                    let synd = syndicate(r,true);
+                                    return synd.s >= 100 ? synd.o : 0;
+                                }
+                                return 0;
+                            }
+                        }
+                    });
+
+                    if (spaceProjects[region].info.hasOwnProperty('extra')){
+                        spaceProjects[region].info.extra(region);
+                    }
                 }
             }
 
@@ -6145,9 +6172,6 @@ export function zigguratBonus(){
         if (global.tech['ancient_deify'] && global.tech['ancient_deify'] >= 2 && support_on['exotic_lab']){
             zig += 0.0001 * support_on['exotic_lab'];
         }
-        if (global.race['high_pop']){
-            zig = highPopAdjust(zig);
-        }
         if (global.civic.govern.type === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
             let faith = 0.00002;
             if (global.race['high_pop']){
@@ -6157,6 +6181,9 @@ export function zigguratBonus(){
         }
         if (global.race['ooze']){
             zig *= 1 - (traits.ooze.vars()[1] / 100);
+        }
+        if (global.race['high_pop']){
+            zig = highPopAdjust(zig);
         }
         bonus += (global.space.ziggurat.count * global.civic.colonist.workers * zig);
     }
@@ -6784,10 +6811,17 @@ export function terraformLab(wiki){
     if (global.custom.hasOwnProperty('planet')){
         let uni = universeAffix();
         if (global.custom.planet.hasOwnProperty(uni)){
-            let type = global.race['truepath'] ? 'tp' : 's';
+            let type = 's';
             if (global.custom.planet[uni][type]){
                 planet = deepClone(global.custom.planet[uni][type]);
-                planet['pts'] = 0;
+                geoList.forEach(function (res){
+                    if (planet.geology.hasOwnProperty(res)){
+                        planet.geology[res] *= 100;
+                    }
+                    else {
+                        planet.geology[res] = 0;
+                    }
+                });
             }
         }
     }
