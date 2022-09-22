@@ -1323,11 +1323,11 @@ export function calcPrestige(type,inputs){
             break;
         case 'cataclysm':
         case 'bioseed':
-            pop_divisor = 3;
+            pop_divisor = .01;
             k_inc = 50000;
             k_mult = 1.015;
-            phage_mult = 1;
-            plasmid_cap = 400;
+            phage_mult = 5;
+            plasmid_cap = 100000;
             break;
         case 'ai':
             pop_divisor = 2.5;
